@@ -1,0 +1,52 @@
+{
+  "name": "moleculer-cron",
+  "version": "0.0.1",
+  "description": "Mixin for Node-Cron",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon examples/index.js",
+    "ci": "jest --watch",
+    "lint": "eslint --ext=.js src test",
+    "deps": "npm-check -u",
+    "coverall": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
+  },
+  "keywords": [
+    "microservice",
+    "moleculer",
+    "cron"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:davidroman0O/moleculer-cron.git"
+  },
+  "homepage": "https://github.com/davidroman0O/moleculer-cron#readme",
+  "author": "David Roman",
+  "peerDependencies": {
+    "moleculer": "^0.11.0"
+  },
+  "devDependencies": {
+    "benchmarkify": "2.1.0",
+    "coveralls": "3.0.0",
+    "eslint": "4.8.0",
+    "jest": "20.0.4",
+    "jest-cli": "20.0.4",
+    "lolex": "2.1.3",
+    "moleculer": "0.11.1",
+    "moleculer-docgen": "0.2.1",
+    "nodemon": "1.12.1",
+    "npm-check": "5.4.5"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/test/services/"
+    ]
+  },
+  "engines": {
+    "node": ">= 6.x.x"
+  },
+  "dependencies": {
+    "cron": "^1.3.0"
+  }
+}
