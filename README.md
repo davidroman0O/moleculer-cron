@@ -28,51 +28,49 @@ const Cron = require("moleculer-cron");
 broker.createService({
     name: "cron-job",
 
-    mixins: [
-        Cron(
-            [
-                {
-                    name: "JobHelloWorld",
-                    cronTime: '* * * * *',
-                    onTick: function() {
+    mixins: [Cron()],
 
-                        console.log('JobHelloWorld ticked');
+    crons: [
+        {
+            name: "JobHelloWorld",
+            cronTime: '* * * * *',
+            onTick: function() {
 
-                        this.getLocalService("cron-job")
-                            .actions.say()
-                            .then((data) => {
-                                console.log("Oh!", data);
-                            });
-                    },
-                    runOnInit: function() {
-                        console.log("JobHelloWorld is created");
-                    },
-                    manualStart: true,
-                    timeZone: 'America/Nipigon'
-                },
-                {
-                    name: "JobWhoStartAnother",
-                    cronTime: '* * * * *',
-                    onTick: function() {
+                console.log('JobHelloWorld ticked');
 
-                        console.log('JobWhoStartAnother ticked');
+                this.getLocalService("cron-job")
+                    .actions.say()
+                    .then((data) => {
+                        console.log("Oh!", data);
+                    });
+            },
+            runOnInit: function() {
+                console.log("JobHelloWorld is created");
+            },
+            manualStart: true,
+            timeZone: 'America/Nipigon'
+        },
+        {
+            name: "JobWhoStartAnother",
+            cronTime: '* * * * *',
+            onTick: function() {
 
-                        var job = this.getJob("JobHelloWorld");
+                console.log('JobWhoStartAnother ticked');
 
-                        if (!job.lastDate()) {
-                            job.start();
-                        } else {
-                            console.log("JobHelloWorld is already started!");
-                        }
+                var job = this.getJob("JobHelloWorld");
 
-                    },
-                    runOnInit: function() {
-                        console.log("JobWhoStartAnother is created");
-                    },
-                    timeZone: 'America/Nipigon'
+                if (!job.lastDate()) {
+                    job.start();
+                } else {
+                    console.log("JobHelloWorld is already started!");
                 }
-            ]
-        )
+
+            },
+            runOnInit: function() {
+                console.log("JobWhoStartAnother is created");
+            },
+            timeZone: 'America/Nipigon'
+        }
     ],
 
     actions: {

@@ -21,7 +21,7 @@ const cron = require("cron");
 		}
 	]
 */
-module.exports = function createService(cronOpts) {
+module.exports = function createService() {
 
 	/**
 	*  Mixin service for Cron
@@ -71,7 +71,9 @@ module.exports = function createService(cronOpts) {
 
 			this.$crons = [];
 
-			cronOpts.map((job) => {
+			console.log("---- ", this.schema);
+
+			this.schema.crons.map((job) => {
 				//	Prevent error on runOnInit that handle onTick at the end of the constructor
 				//	We handle it ourself
 				var cacheFunction = job.runOnInit;
