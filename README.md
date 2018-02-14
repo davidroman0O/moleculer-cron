@@ -2,7 +2,7 @@
 
 # moleculer-cron [![NPM version](https://img.shields.io/npm/v/moleculer-bee-queue.svg)](https://www.npmjs.com/package/moleculer-cron)
 
-Cron mixin [Bee-Queue](https://github.com/kelektiv/node-cron).
+Cron mixin [Node-Cron](https://github.com/kelektiv/node-cron).
 
 # Install
 
