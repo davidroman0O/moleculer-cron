@@ -8,6 +8,7 @@
     "ci": "jest --watch",
     "lint": "eslint --ext=.js src test",
     "deps": "npm-check -u",
+    "test": "jest --coverage",
     "coverall": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
   },
   "keywords": [
