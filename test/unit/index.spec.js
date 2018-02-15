@@ -5,6 +5,7 @@ let addCB = jest.fn();
 let addDelayedCB = jest.fn();
 
 const Cron = require("../../src");
+const lolex = require("lolex");
 
 const { ServiceBroker } = require("moleculer");
 
@@ -71,9 +72,12 @@ describe("Test Cron created handler called twice", () => {
 
 	it("should be call start", () => {
 
+		var clock = lolex.install({ shouldAdvanceTime: true, advanceTimeDelta: 40 });
+
 		setTimeout(() => {
 			expect(addDelayedCB).toHaveBeenCalledTimes(2);
-		}, 60000);
+			 clock.uninstall();
+		}, 50);
 
 	});
 
