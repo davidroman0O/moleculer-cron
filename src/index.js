@@ -36,6 +36,12 @@ module.exports = {
 	 */
 	methods: {
 
+		/**
+		 * Find a job by name
+		 * 
+		 * @param {String} name 
+		 * @returns {CronJob}
+		 */
 		getJob(name) {
 			var searchedJob = undefined;
 			this.$crons.map((job) => {
@@ -57,6 +63,10 @@ module.exports = {
 			return text;
 		},
 
+		/**
+		 * Get a Cron time
+		 * @param {String} time 
+		 */
 		getCronTime(time) {
 			return new cron.CronTime(time);
 		}
@@ -67,13 +77,10 @@ module.exports = {
 	 * Service created lifecycle event handler
 	 */
 	created() {
-
 		this.$crons = [];
 
-		// console.log("---- ", this.schema);
-
 		if (this.schema.crons) {
-			this.schema.crons.map((job) => {
+			this.$crons = this.schema.crons.map((job) => {
 				//	Prevent error on runOnInit that handle onTick at the end of the constructor
 				//	We handle it ourself
 				var cacheFunction = job.runOnInit;
@@ -95,7 +102,8 @@ module.exports = {
 				instance_job.runOnStarted = cacheFunction;
 				instance_job.manualStart = job.manualStart || false;
 				instance_job.name = job.name || this.makeid(20);
-				this.$crons.push(instance_job);
+				
+				return instance_job;
 			});
 		}
 
