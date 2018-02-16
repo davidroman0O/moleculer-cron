@@ -12,7 +12,7 @@ const { ServiceBroker } = require("moleculer");
 
 describe("Test Cron constructor", () => {
 	const broker = new ServiceBroker();
-	const service = broker.createService(Cron());
+	const service = broker.createService(Cron);
 	it("should be created", () => {
 		expect(service).toBeDefined();
 		expect(service.$crons).toBeDefined();
@@ -27,7 +27,7 @@ describe("Test Cron created handler", () => {
 	const service = broker.createService(
 		{
 			name: "test-should-be-created",
-			mixins: [Cron()],
+			mixins: [Cron],
 			crons: [
 					{
 	            name: nameJob,
@@ -57,7 +57,7 @@ describe("Test Cron created handler called twice", () => {
 	const service = broker.createService(
 		{
 			name: "test-should-be-created",
-			mixins: [Cron()],
+			mixins: [Cron],
 			crons: [
 					{
 	            name: "ahah",
