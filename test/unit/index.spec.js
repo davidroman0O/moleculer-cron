@@ -101,8 +101,6 @@ describe("Test Cron getCronTime method", () => {
 
 
 describe("Test Cron started handler", () => {
-	const broker = new ServiceBroker();
-
 	it("should call start & runOnInit", () => {
 		const runOnInitCB = jest.fn();
 
@@ -111,6 +109,7 @@ describe("Test Cron started handler", () => {
 		};
 		cron.CronJob = jest.fn(() => cronJob);
 
+		const broker = new ServiceBroker();
 		broker.createService({
 			name: "cron",
 			mixins: [Cron],
@@ -123,6 +122,33 @@ describe("Test Cron started handler", () => {
 
 		return broker.start().then(() => {
 			expect(cronJob.start).toHaveBeenCalledTimes(1);
+			expect(runOnInitCB).toHaveBeenCalledTimes(1);
+		});
+
+	});
+
+	it("should not call start but runOnInit", () => {
+		const runOnInitCB = jest.fn();
+
+		let cronJob = {
+			start: jest.fn()
+		};
+		cron.CronJob = jest.fn(() => cronJob);
+
+		const broker = new ServiceBroker();
+		broker.createService({
+			name: "cron",
+			mixins: [Cron],
+			crons: [
+				{
+					manualStart: true,
+					runOnInit: runOnInitCB
+				}
+			]
+		});
+
+		return broker.start().then(() => {
+			expect(cronJob.start).toHaveBeenCalledTimes(0);
 			expect(runOnInitCB).toHaveBeenCalledTimes(1);
 		});
 
