@@ -43,13 +43,7 @@ module.exports = {
 		 * @returns {CronJob}
 		 */
 		getJob(name) {
-			var searchedJob = undefined;
-			this.$crons.map((job) => {
-				if (job.hasOwnProperty("name") && job.name == name) {
-					searchedJob = job;
-				}
-			});
-			return searchedJob;
+			return this.$crons.find((job) => job.hasOwnProperty("name") && job.name == name);
 		},
 
 		//	stolen on StackOverflow
