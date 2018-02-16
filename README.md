@@ -28,7 +28,7 @@ const Cron = require("moleculer-cron");
 broker.createService({
     name: "cron-job",
 
-    mixins: [Cron()],
+   mixins: [Cron],
 
     crons: [
         {
@@ -117,7 +117,7 @@ API
 
 Parameter Based
 
-* `Cron(array)`
+* `Cron`
     * `cronTime` - [REQUIRED] - The time to fire off your job. This can be in the form of cron syntax or a JS [Date](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date) object.
     * `onTick` - [REQUIRED] - The function to fire at the specified time.
     * `name` - [OPTIONAL] - Set a name to the job, will be automaticly generated if you don't set it
