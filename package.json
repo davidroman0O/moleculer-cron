@@ -1,6 +1,6 @@
 {
   "name": "moleculer-cron",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Mixin for Node-Cron",
   "main": "index.js",
   "scripts": {
