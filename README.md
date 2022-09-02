@@ -4,6 +4,11 @@
 
 Cron mixin [Node-Cron](https://github.com/kelektiv/node-cron).
 
+
+# Notes
+
+Open source repositories are not your personal StackOverflow or your personal search engine. Please do not create issues that can be fixed with just few minutes on a search engine or stack overflow.
+
 #   Description
 
 Easy to use cron with moleculer!
