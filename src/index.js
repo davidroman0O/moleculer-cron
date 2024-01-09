@@ -72,51 +72,50 @@ module.exports = {
 	 */
 	created() {
 		this.$crons = [];
-
 		if (this.schema.crons) {
+			// `cron` changed their way of creating crons, so now it's a function that will proxy the instanciation
 			this.$crons = this.schema.crons.map((job) => {
-				//	Prevent error on runOnInit that handle onTick at the end of the constructor
-				//	We handle it ourself
-				var cacheFunction = job.runOnInit;
-				job.runOnInit = undefined;
-				//	Just add the broker to handle actions and methods from other services
-				var instance_job = new cron.CronJob(
-					Object.assign(
-						job,
-						{
-							context: Object.assign(
-											this.broker,
-											{
-												getJob: this.getJob
-											}
-									)
-						}
+				var instance_job = () => {
+					// cronTime, onTick, onComplete, start, timeZone, context, runOnInit, utcOffset, unrefTimeout
+					var cronjob = new cron.CronJob(
+						job.cronTime, // cronTime
+						job.onTick || (_ => {}), // onTick
+						job.onComplete || (_ => {}), // onComplete
+						job.manualStart || false, // start
+						job.timeZone, // timeZone
+						Object.assign(
+							this.broker,
+							{
+								getJob: this.getJob,
+							}
+						), // context
+						job.runOnInit || (_ => {}), // runOnInit
+						job.utcOffset || null, // utcOffset
+						job.unrefTimeout || null, // unrefTimeout
 					)
-				);
-				instance_job.runOnStarted = cacheFunction;
-				instance_job.manualStart = job.manualStart || false;
-				instance_job.name = job.name || this.makeid(20);
+					cronjob.manualStart = job.manualStart || false
+					cronjob.name = job.name || this.makeid(20);
+					return cronjob;
+				};
 				
 				return instance_job;
 			});
 		}
-
 		return this.Promise.resolve();
 	},
 
-	/**
-	 * Service started lifecycle event handler
-	 */
-	started() {
-		this.$crons.map((job) => {
-			if (!job.manualStart) {
-				job.start();
-			}
-			this.logger.info("Start Cron - ", job.name);
-			if (job.runOnStarted) {
-				job.runOnStarted();
-			}
-		});
+	events: {
+		"$broker.started": function() {
+			this.$crons = this.$crons.map((job, idx) => {
+				var jobCron = job();
+				this.$crons[idx] = jobCron; // sneaky
+				if (!jobCron.manualStart) {
+					jobCron.start();
+				}
+				this.logger.info(`Start Cron - '${jobCron.name}'`);
+				return jobCron;
+			});
+		}
 	},
 
 	/**
