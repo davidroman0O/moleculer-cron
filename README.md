@@ -39,56 +39,62 @@ broker.createService({
         {
             name: "JobHelloWorld",
             cronTime: '* * * * *',
-            onTick: function() {
-
-                console.log('JobHelloWorld ticked');
-
-                this.getLocalService("cron-job")
-                    .actions.say()
-                    .then((data) => {
-                        console.log("Oh!", data);
-                    });
+            manualStart: true,
+            timeZone: 'America/Nipigon',
+            onTick: async function() {
+                this.logger.info('JobHelloWorld ticked');
+                await this.call("cron-job.say")
+                    .then(data => this.logger.info("Oh!", data))
+                    .catch(e => this.logger.info("error ", e))
             },
             runOnInit: function() {
-                console.log("JobHelloWorld is created");
+                this.logger.info("JobHelloWorld is created");
             },
-            manualStart: true,
-            timeZone: 'America/Nipigon'
+            onComplete: function() {
+                this.logger.info("JobHelloWorld is finished");
+            }
         },
+
         {
             name: "JobWhoStartAnother",
             cronTime: '* * * * *',
+            timeZone: 'America/Nipigon',
             onTick: function() {
 
-                console.log('JobWhoStartAnother ticked');
+                this.logger.info('JobWhoStartAnother ticked');
 
                 var job = this.getJob("JobHelloWorld");
 
-                if (!job.lastDate()) {
+                if (!job.lastDate() || this.$jobHelloWorldLastDate != undefined) {
+                    this.logger.info("JobHelloWorld need to start! Therefore I should die!");
                     job.start();
+                    this.getJob("JobWhoStartAnother").stop();
                 } else {
-                    console.log("JobHelloWorld is already started!");
+                    this.$jobHelloWorldLastDate = job.lastDate()
+                    this.logger.info(`JobHelloWorld is already started! therefore stop! at ${this.$jobHelloWorldLastDate}`);
+                    job.stop();
                 }
-
             },
             runOnInit: function() {
-                console.log("JobWhoStartAnother is created");
+                this.logger.info("JobWhoStartAnother is created");
             },
-            timeZone: 'America/Nipigon'
+            onComplete: function() {
+                this.logger.info("JobWhoStartAnother is finished");
+            },
         }
+
     ],
 
     actions: {
-
         say: {
             handler(ctx) {
                 return "HelloWorld!";
             }
         }
-
     }
 
 });
+
 ```
 
 #   How to use it (edited Node-Cron documentation)
