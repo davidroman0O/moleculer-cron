@@ -1,5 +1,5 @@
 {
-  "name": "@stretchshop/moleculer-cron",
+  "name": "moleculer-cron",
   "version": "0.0.4",
   "description": "Mixin for Node-Cron",
   "main": "index.js",
