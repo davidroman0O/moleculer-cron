@@ -40,15 +40,17 @@ describe("Test Cron created handler", () => {
 			]
 		}
 	);
+	const instanceJob = service.$crons[0]();
 
 	it("should be created $crons", () => {
+
 		expect(service).toBeDefined();
 		expect(service.$crons).toBeDefined();
 		expect(service.$crons.length).toBe(1);
-		expect(service.$crons[0]).toBe(cronJob);
-		expect(service.$crons[0].name).toBe(nameJob);
-		expect(service.$crons[0].runOnStarted).toBeDefined();
-		expect(service.$crons[0].manualStart).toBe(false);
+		expect(instanceJob).toBe(cronJob);
+		expect(instanceJob.name).toBe(nameJob);
+		expect(instanceJob.runOnStarted).toBeDefined();
+		expect(instanceJob.manualStart).toBe(false);
 
 		expect(cron.CronJob).toHaveBeenCalledTimes(1);
 	});
