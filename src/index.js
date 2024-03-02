@@ -2,7 +2,7 @@
  * moleculer-cron
  */
 
- "use strict";
+"use strict";
 
 const cron = require("cron");
 
@@ -89,10 +89,12 @@ module.exports = {
 								getJob: this.getJob,
 							}
 						), // context
-						job.runOnInit || (_ => {}), // runOnInit
+						false, // runOnInit
 						job.utcOffset || null, // utcOffset
 						job.unrefTimeout || null, // unrefTimeout
 					)
+					// Will be triggered at the start if it's defined
+					cronjob.runOnStarted = job.runOnInit;
 					cronjob.manualStart = job.manualStart || false
 					cronjob.name = job.name || this.makeid(20);
 					return cronjob;
@@ -113,6 +115,10 @@ module.exports = {
 					jobCron.start();
 				}
 				this.logger.info(`Start Cron - '${jobCron.name}'`);
+
+				if (jobCron.runOnStarted) {
+					jobCron.runOnStarted();
+				}
 				return jobCron;
 			});
 		}
