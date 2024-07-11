@@ -1,135 +1,137 @@
-/*
- * moleculer-cron
- */
+const { CronJob, CronTime } = require("cron");
 
-"use strict";
-
-const cron = require("cron");
-
-
-/**
-	cronOpts
-	[
-		{
-			cronTime,
-			onTick,
-			onComplete,
-			start,
-			timezone,
-			manualStart,
-			runOnInit
-		}
-	]
-*/
-
-/**
-*  Mixin service for Cron
-*
-* @name moleculer-cron
-* @module Service
-*/
 module.exports = {
-	name: "cron",
+  name: "cron",
 
-	/**
-	 * Methods
-	 */
-	methods: {
+  settings: {
+    cronJobs: []
+  },
 
-		/**
-		 * Find a job by name
-		 * 
-		 * @param {String} name 
-		 * @returns {CronJob}
-		 */
-		getJob(name) {
-			return this.$crons.find((job) => job.hasOwnProperty("name") && job.name == name);
-		},
+  created() {
+    this.jobs = new Map();
+    this.validateAndCreateJobs();
+  },
 
-		//	stolen on StackOverflow
-		makeid(size) {
-			var text = "";
-			var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  started() {
+    this.startJobs();
+  },
 
-			for (var i = 0; i < size; i++)
-			text += possible.charAt(Math.floor(Math.random() * possible.length));
+  stopped() {
+    for (const job of this.jobs.values()) {
+      job.stop();
+    }
+    this.jobs.clear();
+  },
 
-			return text;
-		},
+  methods: {
+    validateAndCreateJobs() {
+      if (!Array.isArray(this.settings.cronJobs)) {
+        this.logger.warn("No cron jobs defined or invalid configuration");
+        return;
+      }
 
-		/**
-		 * Get a Cron time
-		 * @param {String} time 
-		 */
-		getCronTime(time) {
-			return new cron.CronTime(time);
-		}
+      for (const jobConfig of this.settings.cronJobs) {
+        try {
+          this.createJob(jobConfig);
+        } catch (error) {
+          this.logger.error(`Error creating cron job: ${error.message}`, jobConfig);
+          console.error(error);
+        }
+      }
+    },
 
-	},
+    createJob(jobConfig) {
+      if (!jobConfig.name || !jobConfig.cronTime || !jobConfig.onTick) {
+        throw new Error("Invalid job configuration. Required: name, cronTime, onTick");
+      }
 
-	/**
-	 * Service created lifecycle event handler
-	 */
-	created() {
-		this.$crons = [];
-		if (this.schema.crons) {
-			// `cron` changed their way of creating crons, so now it's a function that will proxy the instanciation
-			this.$crons = this.schema.crons.map((job) => {
-				var instance_job = () => {
-					// cronTime, onTick, onComplete, start, timeZone, context, runOnInit, utcOffset, unrefTimeout
-					var cronjob = new cron.CronJob(
-						job.cronTime, // cronTime
-						job.onTick || (_ => {}), // onTick
-						job.onComplete || (_ => {}), // onComplete
-						job.manualStart || false, // start
-						job.timeZone, // timeZone
-						Object.assign(
-							this.broker,
-							{
-								getJob: this.getJob,
-							}
-						), // context
-						false, // runOnInit
-						job.utcOffset || null, // utcOffset
-						job.unrefTimeout || null, // unrefTimeout
-					)
-					// Will be triggered at the start if it's defined
-					cronjob.runOnStarted = job.runOnInit;
-					cronjob.manualStart = job.manualStart || false
-					cronjob.name = job.name || this.makeid(20);
-					return cronjob;
-				};
-				
-				return instance_job;
-			});
-		}
-		return this.Promise.resolve();
-	},
+      try {
+        const job = new CronJob(
+          jobConfig.cronTime,
+          this.wrapOnTick(jobConfig.name, jobConfig.onTick),
+          this.wrapOnComplete(jobConfig.name, jobConfig.onComplete),
+          false,
+          jobConfig.timeZone,
+          this
+        );
 
-	events: {
-		"$broker.started": function() {
-			this.$crons = this.$crons.map((job, idx) => {
-				var jobCron = job();
-				this.$crons[idx] = jobCron; // sneaky
-				if (!jobCron.manualStart) {
-					jobCron.start();
-				}
-				this.logger.info(`Start Cron - '${jobCron.name}'`);
+        const jobWrapper = {
+          start: () => job.start(),
+          stop: () => job.stop(),
+          lastDate: () => job.lastDate(),
+          running: job.running,
+          manualStart: jobConfig.manualStart || false
+        };
 
-				if (jobCron.runOnStarted) {
-					jobCron.runOnStarted();
-				}
-				return jobCron;
-			});
-		}
-	},
+        this.jobs.set(jobConfig.name, jobWrapper);
+        this.logger.info(`Cron job created: ${jobConfig.name}`);
 
-	/**
-	 * Service stopped lifecycle event handler
-	 */
-	stopped() {
-		this.$crons.map((job) => {
-			job.stop();
-		});
-	}
+        if (typeof jobConfig.runOnInit === 'function') {
+          jobConfig.runOnInit.call(this);
+        }
+      } catch (error) {
+        throw new Error(`Failed to create job ${jobConfig.name}: ${error.message}`);
+      }
+    },
+
+    wrapOnTick(jobName, onTick) {
+      return async () => {
+        try {
+          this.logger.debug(`Running cron job: ${jobName}`);
+          await onTick.call(this);
+        } catch (error) {
+          this.logger.error(`Error in cron job ${jobName}: ${error.message}`);
+        }
+      };
+    },
+
+    wrapOnComplete(jobName, onComplete) {
+      return () => {
+        try {
+          this.logger.debug(`Completed cron job: ${jobName}`);
+          if (typeof onComplete === 'function') {
+            onComplete.call(this);
+          }
+        } catch (error) {
+          this.logger.error(`Error in onComplete for job ${jobName}: ${error.message}`);
+        }
+      };
+    },
+
+    startJobs() {
+      for (const [name, job] of this.jobs) {
+        if (!job.manualStart) {
+          this.startJob(name);
+        }
+      }
+    },
+
+    startJob(name) {
+      const job = this.jobs.get(name);
+      if (job && !job.running) {
+        job.start();
+        this.logger.info(`Started cron job: ${name}`);
+      } else if (!job) {
+        this.logger.warn(`Attempted to start non-existent job: ${name}`);
+      }
+    },
+
+    stopJob(name) {
+      const job = this.jobs.get(name);
+      if (job && job.running) {
+        job.stop();
+        this.logger.info(`Stopped cron job: ${name}`);
+      } else if (!job) {
+        this.logger.warn(`Attempted to stop non-existent job: ${name}`);
+      }
+    },
+
+    getJob(name) {
+      return this.jobs.get(name);
+    },
+
+    getCronTime(time) {
+      return new CronTime(time);
+    }
+  }
 };

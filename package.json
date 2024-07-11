@@ -3,6 +3,7 @@
   "version": "0.0.4",
   "description": "Mixin for Node-Cron",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "dev": "nodemon examples/index.js",
     "ci": "jest --watch",

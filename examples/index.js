@@ -1,10 +1,10 @@
 const { ServiceBroker } = require("moleculer");
-const Cron = require("../src/index");
+const CronMixin = require("../src/index");
 
 // Create a broker
 const broker = new ServiceBroker();
 
-// Create a service
+// Create a math service
 broker.createService({
     name: "math",
     actions: {
@@ -17,66 +17,69 @@ broker.createService({
 broker.createService({
     name: "cron-job",
 
-   mixins: [Cron],
+    mixins: [CronMixin],
 
-    crons: [
-        {
-            name: "JobHelloWorld",
-            cronTime: '* * * * *',
-            manualStart: true,
-            timeZone: 'America/Nipigon',
-            onTick: async function() {
-                this.logger.info('JobHelloWorld ticked');
-                await this.call("cron-job.say")
-                    .then(data => this.logger.info("Oh!", data))
-                    .catch(e => this.logger.info("error ", e))
-            },
-            runOnInit: function() {
-                this.logger.info("JobHelloWorld is created");
-            },
-            onComplete: function() {
-                this.logger.info("JobHelloWorld is finished");
-            }
-        },
-
-        {
-            name: "JobWhoStartAnother",
-            cronTime: '* * * * *',
-            timeZone: 'America/Nipigon',
-            onTick: function() {
-
-                this.logger.info('JobWhoStartAnother ticked');
-
-                var job = this.getJob("JobHelloWorld");
-
-                if (!job.lastDate() || this.$jobHelloWorldLastDate != undefined) {
-                    this.logger.info("JobHelloWorld need to start! Therefore I should die!");
-                    job.start();
-                    this.getJob("JobWhoStartAnother").stop();
-                } else {
-                    this.$jobHelloWorldLastDate = job.lastDate()
-                    this.logger.info(`JobHelloWorld is already started! therefore stop! at ${this.$jobHelloWorldLastDate}`);
-                    job.stop();
+    settings: {
+        cronJobs: [
+            {
+                name: "jobHelloWorld",
+                cronTime: '*/5 * * * * *', // Run every 5 seconds
+                manualStart: true, // This job needs to be started manually
+                onTick: async function() {
+                    this.logger.info('JobHelloWorld ticked');
+                    try {
+                        const data = await this.broker.call("cron-job.say");
+                        this.logger.info("Oh!", data);
+                        
+                        // Stop this job and start the other one
+                        const thisJob = this.getJob("jobHelloWorld");
+                        const otherJob = this.getJob("jobToggle");
+                        thisJob.stop();
+                        otherJob.start();
+                        this.logger.info("Stopped JobHelloWorld and started JobToggle");
+                    } catch (e) {
+                        this.logger.info("error ", e);
+                    }
+                },
+                runOnInit: function() {
+                    this.logger.info("JobHelloWorld is created");
+                    // This job is manual start, so it won't start automatically
+                },
+                onComplete: function() {
+                    this.logger.info("JobHelloWorld is stopped");
                 }
             },
-            runOnInit: function() {
-                this.logger.info("JobWhoStartAnother is created");
-            },
-            onComplete: function() {
-                this.logger.info("JobWhoStartAnother is finished");
-            },
-        }
-
-    ],
+            {
+                name: "jobToggle",
+                cronTime: '*/5 * * * * *', // Run every 5 seconds
+                onTick: function() {
+                    this.logger.info('JobToggle ticked');
+                    
+                    // Stop this job and start the other one
+                    const thisJob = this.getJob("jobToggle");
+                    const otherJob = this.getJob("jobHelloWorld");
+                    thisJob.stop();
+                    otherJob.start();
+                    this.logger.info("Stopped JobToggle and started JobHelloWorld");
+                },
+                runOnInit: function() {
+                    this.logger.info("JobToggle is created");
+                    // This job will start automatically
+                },
+                onComplete: function() {
+                    this.logger.info("JobToggle is stopped");
+                }
+            }
+        ]
+    },
 
     actions: {
         say: {
-            handler(ctx) {
+            handler() {
                 return "HelloWorld!";
             }
-        }
+        },
     }
-
 });
 
 
