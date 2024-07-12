@@ -2,8 +2,12 @@ import { ServiceSchema, Context } from "moleculer";
 import { CronJob as NodeCronJob, CronTime as NodeCronTime } from "cron";
 
 declare module "moleculer" {
-    interface ServiceSchema {
+    interface ServiceSettingsSchema {
         cronJobs?: CronJobConfig[];
+    }
+
+    interface Service {
+        jobs?: Map<string, CronJobWrapper>;
     }
 }
 
@@ -15,7 +19,7 @@ export interface CronJobConfig {
     start?: boolean;
     timeZone?: string | null;
     context?: any;
-    runOnInit?: boolean | null;
+    onJobInitialised?: (this: Context) => void;
     utcOffset?: number | null;
     unrefTimeout?: boolean | null;
 }
@@ -40,6 +44,18 @@ export interface CronTime {
     _offsets: number[];
 }
 
+export interface CronJobWrapper {
+    cronJob: CronJob;
+    startJob: () => void;
+    stopJob: () => void;
+    lastDate: () => Date;
+    running: () => boolean;
+    setTime: (cronTime: string | Date) => void;
+    nextDates: (count: number) => Date[];
+    addCallback: (callback: () => void) => void;
+    manualStart: boolean;
+}
+
 export interface CronMixinSchema extends ServiceSchema {
     settings?: {
         cronJobs?: CronJobConfig[];
@@ -52,7 +68,7 @@ export interface CronMixinSchema extends ServiceSchema {
         startJobs: () => void;
         startJob: (name: string) => void;
         stopJob: (name: string) => void;
-        getJob: (name: string) => CronJob | undefined;
+        getJob: (name: string) => CronJobWrapper | undefined;
         getCronTime: (time: string | Date) => CronTime;
     };
 }
