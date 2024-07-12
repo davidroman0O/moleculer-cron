@@ -16,11 +16,10 @@ module.exports = {
     this.startJobs();
   },
 
-  stopped() {
+  async stopped() {
     for (const job of this.jobs.values()) {
-      job.stop();
+      job.stopJob();
     }
-    this.jobs.clear();
   },
 
   methods: {
@@ -44,7 +43,7 @@ module.exports = {
       if (!jobConfig.name || !jobConfig.cronTime || !jobConfig.onTick) {
         throw new Error("Invalid job configuration. Required: name, cronTime, onTick");
       }
-
+    
       try {
         const job = new CronJob(
           jobConfig.cronTime,
@@ -54,18 +53,30 @@ module.exports = {
           jobConfig.timeZone,
           this
         );
-
+    
         const jobWrapper = {
-          start: () => job.start(),
-          stop: () => job.stop(),
-          lastDate: () => job.lastDate(),
-          running: job.running,
+          name: jobConfig.name,
+          cronJob: job,
+          startJob: function() {
+            if (jobConfig.OnStart) jobConfig.OnStart();
+            this.cronJob.start();
+          },
+          stopJob: function() {
+            if (jobConfig.OnStop) jobConfig.OnStop();
+            this.cronJob.stop();
+          },
+          lastDate: function() {
+            return this.cronJob.lastDate();
+          },
+          running: function() {
+            return this.cronJob.running;
+          },
           manualStart: jobConfig.manualStart || false
         };
-
+    
         this.jobs.set(jobConfig.name, jobWrapper);
         this.logger.info(`Cron job created: ${jobConfig.name}`);
-
+    
         if (typeof jobConfig.runOnInit === 'function') {
           jobConfig.runOnInit.call(this);
         }
@@ -105,27 +116,27 @@ module.exports = {
         }
       }
     },
-
+    
     startJob(name) {
       const job = this.jobs.get(name);
-      if (job && !job.running) {
-        job.start();
+      if (job && !job.running()) {
+        job.startJob();
         this.logger.info(`Started cron job: ${name}`);
       } else if (!job) {
         this.logger.warn(`Attempted to start non-existent job: ${name}`);
       }
     },
-
+    
     stopJob(name) {
       const job = this.jobs.get(name);
-      if (job && job.running) {
-        job.stop();
+      if (job && job.running()) {
+        job.stopJob();
         this.logger.info(`Stopped cron job: ${name}`);
       } else if (!job) {
         this.logger.warn(`Attempted to stop non-existent job: ${name}`);
       }
     },
-
+    
     getJob(name) {
       return this.jobs.get(name);
     },

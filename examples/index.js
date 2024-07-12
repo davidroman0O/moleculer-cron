@@ -32,10 +32,8 @@ broker.createService({
                         this.logger.info("Oh!", data);
                         
                         // Stop this job and start the other one
-                        const thisJob = this.getJob("jobHelloWorld");
-                        const otherJob = this.getJob("jobToggle");
-                        thisJob.stop();
-                        otherJob.start();
+                        this.stopJob("jobHelloWorld");
+                        this.startJob("jobToggle");
                         this.logger.info("Stopped JobHelloWorld and started JobToggle");
                     } catch (e) {
                         this.logger.info("error ", e);
@@ -56,10 +54,8 @@ broker.createService({
                     this.logger.info('JobToggle ticked');
                     
                     // Stop this job and start the other one
-                    const thisJob = this.getJob("jobToggle");
-                    const otherJob = this.getJob("jobHelloWorld");
-                    thisJob.stop();
-                    otherJob.start();
+                    this.stopJob("jobToggle");
+                    this.startJob("jobHelloWorld");
                     this.logger.info("Stopped JobToggle and started JobHelloWorld");
                 },
                 runOnInit: function() {
@@ -81,7 +77,6 @@ broker.createService({
         },
     }
 });
-
 
 // Start broker
 broker.start()

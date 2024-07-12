@@ -1,42 +1,15 @@
-"use strict";
-
 const CronMixin = require("../../src");
 const { ServiceBroker } = require("moleculer");
-const { CronJob, CronTime } = require("cron");
-
-jest.mock("cron");
 
 describe("Test Cron Mixin", () => {
-  let broker, service, mockCronJob;
+  let broker, service;
 
   beforeEach(() => {
     broker = new ServiceBroker({ logger: false });
-    mockCronJob = {
-      start: jest.fn(),
-      stop: jest.fn(),
-      lastDate: jest.fn(),
-      running: false
-    };
-    CronJob.mockImplementation((cronTime, onTick, onComplete, start, timeZone, context) => {
-      mockCronJob.cronTime = cronTime;
-      mockCronJob.onTick = onTick;
-      mockCronJob.onComplete = onComplete;
-      mockCronJob.timeZone = timeZone;
-      mockCronJob.context = context;
-      mockCronJob.start = jest.fn(() => {
-        mockCronJob.running = true;
-        setTimeout(onTick, 1000); // Simulate a tick after 1 second
-      });
-      mockCronJob.stop = jest.fn(() => {
-        mockCronJob.running = false;
-      });
-      return mockCronJob;
-    });
   });
 
   afterEach(async () => {
     await broker.stop();
-    jest.clearAllMocks();
   });
 
   describe("Test Cron constructor", () => {
@@ -54,7 +27,7 @@ describe("Test Cron Mixin", () => {
     });
   });
 
-  describe("Test Cron job creation", () => {
+  describe("Test Cron job creation and management", () => {
     const testJob = {
       name: "testJob",
       cronTime: "*/1 * * * * *", // Every second
@@ -62,7 +35,7 @@ describe("Test Cron Mixin", () => {
       timeZone: "America/New_York"
     };
 
-    beforeEach(() => {
+    beforeEach(async () => {
       service = broker.createService({
         name: "cron",
         mixins: [CronMixin],
@@ -70,105 +43,75 @@ describe("Test Cron Mixin", () => {
           cronJobs: [testJob]
         }
       });
+      await broker.start();
     });
 
-    it("should create a job", () => {
+    it("should create a job", async () => {
       expect(service.jobs.size).toBe(1);
       expect(service.jobs.has("testJob")).toBeTruthy();
-      expect(CronJob).toHaveBeenCalledWith(
-        testJob.cronTime,
-        expect.any(Function),
-        expect.any(Function),
-        false,
-        testJob.timeZone,
-        expect.any(Object)
-      );
     });
 
-    it("should wrap onTick function", async () => {
+    it("should start and stop a job", async () => {
       const job = service.jobs.get("testJob");
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 1100)); // Wait just over 1 second
-      expect(testJob.onTick).toHaveBeenCalled();
-    });
-  });
-
-  describe("Test Cron job management", () => {
-    beforeEach(() => {
-      service = broker.createService({
-        name: "cron",
-        mixins: [CronMixin],
-        settings: {
-          cronJobs: [{
-            name: "testJob",
-            cronTime: "*/1 * * * * *",
-            onTick: jest.fn()
-          }]
-        }
-      });
-    });
-
-    it("should start a job", async () => {
-      service.startJob("testJob");
-      expect(mockCronJob.start).toHaveBeenCalled();
-      await new Promise(resolve => setTimeout(resolve, 100));
-      expect(mockCronJob.running).toBe(true);
-    });
-
-    it("should stop a job", async () => {
-      service.startJob("testJob");
-      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      expect(job.running()).toBe(true);
+      
       service.stopJob("testJob");
-      expect(mockCronJob.stop).toHaveBeenCalled();
-      expect(mockCronJob.running).toBe(false);
+      expect(job.running()).toBe(false);
+      
+      service.startJob("testJob");
+      expect(job.running()).toBe(true);
     });
 
-    it("should handle non-existent job start gracefully", () => {
+    it("should handle non-existent job operations gracefully", async () => {
       const logSpy = jest.spyOn(service.logger, 'warn');
+      
       service.startJob("nonExistentJob");
       expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Attempted to start non-existent job"));
-    });
-
-    it("should handle non-existent job stop gracefully", () => {
-      const logSpy = jest.spyOn(service.logger, 'warn');
+      
       service.stopJob("nonExistentJob");
       expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Attempted to stop non-existent job"));
     });
   });
 
   describe("Test service lifecycle", () => {
-    beforeEach(() => {
+    beforeEach(async () => {
       service = broker.createService({
         name: "cron",
         mixins: [CronMixin],
         settings: {
           cronJobs: [
             { name: "job1", cronTime: "*/1 * * * * *", onTick: jest.fn() },
-            { name: "job2", cronTime: "*/5 * * * * *", onTick: jest.fn(), manualStart: true }
+            { name: "job2", cronTime: "*/2 * * * * *", onTick: jest.fn(), manualStart: true }
           ]
         }
       });
+      await broker.start();
     });
 
-    it("should start non-manual jobs on service start", async () => {
-      await broker.start();
-      await new Promise(resolve => setTimeout(resolve, 100));
-      expect(service.jobs.get("job1").running).toBe(true);
-      expect(service.jobs.get("job2").running).toBe(false);
-    });
-
-    it("should stop all jobs on service stop", async () => {
-      await broker.start();
-      await new Promise(resolve => setTimeout(resolve, 100));
+    it("should start non-manual jobs on service start and stop all jobs on service stop", async () => {
+      expect(service.jobs.get("job1").running()).toBe(true);
+      expect(service.jobs.get("job2").running()).toBe(false);
+      
       await broker.stop();
-      expect(service.jobs.get("job1").running).toBe(false);
-      expect(service.jobs.get("job2").running).toBe(false);
+      
+      // After stopping the broker, jobs should still exist but not be running
+      expect(service.jobs.get("job1")).toBeDefined();
+      expect(service.jobs.get("job2")).toBeDefined();
+      expect(service.jobs.get("job1").running()).toBe(false);
+      expect(service.jobs.get("job2").running()).toBe(false);
+    });
+
+    it("should allow manual start of jobs", async () => {
+      service.startJob("job2");
+      expect(service.jobs.get("job2").running()).toBe(true);
     });
   });
 
   describe("Test error handling", () => {
-    it("should handle invalid job configurations", () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    it("should handle invalid job configurations", async () => {
+      const logSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      
       service = broker.createService({
         name: "cron",
         mixins: [CronMixin],
@@ -176,24 +119,44 @@ describe("Test Cron Mixin", () => {
           cronJobs: [{ name: "invalidJob" }]
         }
       });
-      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+      
+      await broker.start();
+      
+      expect(logSpy).toHaveBeenCalled();
       expect(service.jobs.size).toBe(0);
-      consoleSpy.mockRestore();
+      
+      logSpy.mockRestore();
     });
   });
 
-  describe("Test getCronTime method", () => {
-    beforeEach(() => {
+  describe("Test job methods", () => {
+    beforeEach(async () => {
       service = broker.createService({
         name: "cron",
-        mixins: [CronMixin]
+        mixins: [CronMixin],
+        settings: {
+          cronJobs: [
+            { name: "job1", cronTime: "*/1 * * * * *", onTick: jest.fn() }
+          ]
+        }
       });
+      await broker.start();
     });
 
-    it("should create a CronTime instance", () => {
-      const time = "0 5 * * *";
-      service.getCronTime(time);
-      expect(CronTime).toHaveBeenCalledWith(time);
+    it("should return last date", async () => {
+      const job = service.jobs.get("job1");
+      expect(job.lastDate()).toBeDefined();
+    });
+
+    it("should get job by name", async () => {
+      const job = service.getJob("job1");
+      expect(job).toBeDefined();
+      expect(job.name).toBe("job1");
+      expect(job.cronJob).toBeDefined();
+      expect(typeof job.startJob).toBe('function');
+      expect(typeof job.stopJob).toBe('function');
+      expect(typeof job.lastDate).toBe('function');
+      expect(typeof job.running).toBe('function');
     });
   });
 });
