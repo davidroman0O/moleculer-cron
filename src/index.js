@@ -154,8 +154,5 @@ module.exports = {
       return new CronTime(time);
     },
 
-    getCronTime(time) {
-      return new CronTime(time);
-    }
   }
 };
