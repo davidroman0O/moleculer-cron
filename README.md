@@ -1,5 +1,3 @@
-![Moleculer logo](http://moleculer.services/images/banner.png)
-
 # moleculer-cron [![NPM version](https://img.shields.io/npm/v/moleculer-cron.svg)](https://www.npmjs.com/package/moleculer-cron)
 
 Cron mixin for Moleculer using [Node-Cron](https://github.com/kelektiv/node-cron).
@@ -125,15 +123,17 @@ broker.createService({
 
 ### Job Object Methods
 
-- `running()` - Returns whether the job is currently running.
+- `startJob()` - Starts the job.
+- `stopJob()` - Stops the job.
 - `lastDate()` - Returns the last execution date of the job.
+- `running()` - Returns whether the job is currently running.
+- `setTime(time)` - Changes the time for the job. `time` can be a cron string or a Date object.
+- `nextDates(count)` - Returns an array of the next `count` dates that the job will run.
+- `addCallback(callback)` - Adds an additional callback function to be executed when the job ticks.
 
-Note: The following methods from the original Node-Cron are not directly exposed in this mixin:
-- `setTime`
-- `nextDates`
-- `addCallback`
+### Utility Methods
 
-If you need these functionalities, you may need to access the underlying CronJob object.
+- `getCronTime(time)` - Returns a CronTime instance for the given time.
 
 ## Notes
 

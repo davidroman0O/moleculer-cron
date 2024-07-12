@@ -71,6 +71,15 @@ module.exports = {
           running: function() {
             return this.cronJob.running;
           },
+          setTime: function(time) {
+            return this.cronJob.setTime(new CronTime(time));
+          },
+          nextDates: function(count) {
+            return this.cronJob.nextDates(count);
+          },
+          addCallback: function(callback) {
+            return this.cronJob.addCallback(callback);
+          },
           manualStart: jobConfig.manualStart || false
         };
     
@@ -139,6 +148,10 @@ module.exports = {
     
     getJob(name) {
       return this.jobs.get(name);
+    },
+
+    getCronTime(time) {
+      return new CronTime(time);
     },
 
     getCronTime(time) {
