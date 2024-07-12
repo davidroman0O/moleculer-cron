@@ -1,6 +1,6 @@
 # moleculer-cron [![NPM version](https://img.shields.io/npm/v/moleculer-cron.svg)](https://www.npmjs.com/package/moleculer-cron)
 
-Cron mixin for Moleculer using [Node-Cron](https://github.com/kelektiv/node-cron).
+Cron mixin for Moleculer using [cron](https://www.npmjs.com/package/cron).
 
 ## Description
 
