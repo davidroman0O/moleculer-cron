@@ -57,6 +57,7 @@ module.exports = {
         const jobWrapper = {
           name: jobConfig.name,
           cronJob: job,
+          onJobInitialised: jobConfig.onJobInitialised || function() {},
           startJob: function() {
             if (jobConfig.OnStart) jobConfig.OnStart();
             this.cronJob.start();
@@ -86,8 +87,8 @@ module.exports = {
         this.jobs.set(jobConfig.name, jobWrapper);
         this.logger.info(`Cron job created: ${jobConfig.name}`);
     
-        if (typeof jobConfig.runOnInit === 'function') {
-          jobConfig.runOnInit.call(this);
+        if (typeof jobWrapper.onJobInitialised === 'function') {
+          jobWrapper.onJobInitialised.call(this);
         }
       } catch (error) {
         throw new Error(`Failed to create job ${jobConfig.name}: ${error.message}`);

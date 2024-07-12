@@ -46,7 +46,7 @@ broker.createService({
                         this.logger.info("error ", e);
                     }
                 },
-                runOnInit: function() {
+                onJobInitialised: function() {
                     this.logger.info("JobHelloWorld is created");
                     // This job is manual start, so it won't start automatically
                 },
@@ -65,7 +65,7 @@ broker.createService({
                     this.startJob("jobHelloWorld");
                     this.logger.info("Stopped JobToggle and started JobHelloWorld");
                 },
-                runOnInit: function() {
+                onJobInitialised: function() {
                     this.logger.info("JobToggle is created");
                     // This job will start automatically
                 },
@@ -113,7 +113,7 @@ broker.createService({
 - `onComplete` - [OPTIONAL] - A function that will fire when the job is stopped.
 - `manualStart` - [OPTIONAL] - Specifies whether to start the job just before exiting the constructor. Default is false.
 - `timeZone` - [OPTIONAL] - Specify the timezone for the execution. Check all timezones available at [Moment Timezone Website](http://momentjs.com/timezone/).
-- `runOnInit` - [OPTIONAL] - A function that will be fired when the job is created.
+- `onJobInitialised` - [OPTIONAL] - A function that will be fired when the job is created.
 
 ### Mixin Methods
 
