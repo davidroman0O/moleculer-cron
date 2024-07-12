@@ -16,7 +16,7 @@ export interface CronJobConfig {
     timeZone?: string;
     context?: any;
     runOnInit?: boolean | ((this: Context) => void);
-    utcOffset?: number;
+    utcOffset?: number | null;
     unrefTimeout?: boolean | null;
 }
 
