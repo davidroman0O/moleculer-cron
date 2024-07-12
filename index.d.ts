@@ -17,7 +17,7 @@ export interface CronJobConfig {
     context?: any;
     runOnInit?: boolean | ((this: Context) => void);
     utcOffset?: number;
-    unrefTimeout?: boolean;
+    unrefTimeout?: boolean | null;
 }
 
 export interface CronJob {
