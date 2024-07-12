@@ -13,7 +13,7 @@ export interface CronJobConfig {
     onTick: (this: Context) => void | Promise<void>;
     onComplete?: (this: Context) => void;
     start?: boolean;
-    timeZone?: string;
+    timeZone?: string | null;
     context?: any;
     runOnInit?: boolean | ((this: Context) => void);
     utcOffset?: number | null;
