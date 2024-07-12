@@ -71,8 +71,8 @@ module.exports = {
           running: function() {
             return this.cronJob.running;
           },
-          setTime: function(time) {
-            return this.cronJob.setTime(new CronTime(time));
+          setTime: function(cronTime) {
+            return this.cronJob.setTime(cronTime);
           },
           nextDates: function(count) {
             return this.cronJob.nextDates(count);
