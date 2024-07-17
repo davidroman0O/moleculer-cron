@@ -1,150 +1,140 @@
-![Moleculer logo](http://moleculer.services/images/banner.png)
+# moleculer-cron [![NPM version](https://img.shields.io/npm/v/moleculer-cron.svg)](https://www.npmjs.com/package/moleculer-cron)
 
-# moleculer-cron [![NPM version](https://img.shields.io/npm/v/moleculer-bee-queue.svg)](https://www.npmjs.com/package/moleculer-cron)
+Cron mixin for Moleculer using [cron](https://www.npmjs.com/package/cron).
 
-Cron mixin [Node-Cron](https://github.com/kelektiv/node-cron).
+## Description
 
+Easy to use cron with Moleculer!
 
-# Notes
-
-Open source repositories are not your personal StackOverflow or your personal search engine. Please do not create issues that can be fixed with just few minutes on a search engine or stack overflow.
-
-#   Description
-
-Easy to use cron with moleculer!
-
-# Install
+## Install
 
 ```bash
 $ npm install moleculer-cron --save
 ```
 
-# Usage
+## Usage
 
-## Create cron service
+### Create cron service
 
-Specify all of your cron task inside of the constructor of the addon.
-
+Specify all of your cron tasks inside the `settings.cronJobs` array of the service.
 
 ```js
-const Cron = require("moleculer-cron");
-
+const CronMixin = require("moleculer-cron");
 
 broker.createService({
     name: "cron-job",
 
-   mixins: [Cron],
+    mixins: [CronMixin],
 
-    crons: [
-        {
-            name: "JobHelloWorld",
-            cronTime: '* * * * *',
-            manualStart: true,
-            timeZone: 'America/Nipigon',
-            onTick: async function() {
-                this.logger.info('JobHelloWorld ticked');
-                await this.call("cron-job.say")
-                    .then(data => this.logger.info("Oh!", data))
-                    .catch(e => this.logger.info("error ", e))
-            },
-            runOnInit: function() {
-                this.logger.info("JobHelloWorld is created");
-            },
-            onComplete: function() {
-                this.logger.info("JobHelloWorld is finished");
-            }
-        },
-
-        {
-            name: "JobWhoStartAnother",
-            cronTime: '* * * * *',
-            timeZone: 'America/Nipigon',
-            onTick: function() {
-
-                this.logger.info('JobWhoStartAnother ticked');
-
-                var job = this.getJob("JobHelloWorld");
-
-                if (!job.lastDate() || this.$jobHelloWorldLastDate != undefined) {
-                    this.logger.info("JobHelloWorld need to start! Therefore I should die!");
-                    job.start();
-                    this.getJob("JobWhoStartAnother").stop();
-                } else {
-                    this.$jobHelloWorldLastDate = job.lastDate()
-                    this.logger.info(`JobHelloWorld is already started! therefore stop! at ${this.$jobHelloWorldLastDate}`);
-                    job.stop();
+    settings: {
+        cronJobs: [
+            {
+                name: "jobHelloWorld",
+                cronTime: '*/5 * * * * *', // Run every 5 seconds
+                manualStart: true, // This job needs to be started manually
+                onTick: async function() {
+                    this.logger.info('JobHelloWorld ticked');
+                    try {
+                        const data = await this.broker.call("cron-job.say");
+                        this.logger.info("Oh!", data);
+                        
+                        // Stop this job and start the other one
+                        this.stopJob("jobHelloWorld");
+                        this.startJob("jobToggle");
+                        this.logger.info("Stopped JobHelloWorld and started JobToggle");
+                    } catch (e) {
+                        this.logger.info("error ", e);
+                    }
+                },
+                onJobInitialised: function() {
+                    this.logger.info("JobHelloWorld is created");
+                    // This job is manual start, so it won't start automatically
+                },
+                onComplete: function() {
+                    this.logger.info("JobHelloWorld is stopped");
                 }
             },
-            runOnInit: function() {
-                this.logger.info("JobWhoStartAnother is created");
-            },
-            onComplete: function() {
-                this.logger.info("JobWhoStartAnother is finished");
-            },
-        }
-
-    ],
+            {
+                name: "jobToggle",
+                cronTime: '*/5 * * * * *', // Run every 5 seconds
+                onTick: function() {
+                    this.logger.info('JobToggle ticked');
+                    
+                    // Stop this job and start the other one
+                    this.stopJob("jobToggle");
+                    this.startJob("jobHelloWorld");
+                    this.logger.info("Stopped JobToggle and started JobHelloWorld");
+                },
+                onJobInitialised: function() {
+                    this.logger.info("JobToggle is created");
+                    // This job will start automatically
+                },
+                onComplete: function() {
+                    this.logger.info("JobToggle is stopped");
+                }
+            }
+        ]
+    },
 
     actions: {
         say: {
-            handler(ctx) {
+            handler() {
                 return "HelloWorld!";
             }
-        }
+        },
     }
-
 });
-
 ```
 
-#   How to use it (edited Node-Cron documentation)
+## Available Cron patterns:
 
+- Asterisk. E.g. *
+- Ranges. E.g. 1-3,5
+- Steps. E.g. */2
 
-Available Cron patterns:
-==========
+[Read up on cron patterns here](http://crontab.org). Note that this library uses six fields, with 1 second as the finest granularity.
 
-    Asterisk. E.g. *
-    Ranges. E.g. 1-3,5
-    Steps. E.g. */2
+## Cron Ranges
 
-[Read up on cron patterns here](http://crontab.org). Note the examples in the
-link have five fields, and 1 minute as the finest granularity, but this library
-has six fields, with 1 second as the finest granularity.
+- Seconds: 0-59
+- Minutes: 0-59
+- Hours: 0-23
+- Day of Month: 1-31
+- Months: 0-11 (Jan-Dec)
+- Day of Week: 0-6 (Sun-Sat)
 
-Cron Ranges
-==========
+## API
 
-When specifying your cron values you'll need to make sure that your values fall within the ranges. For instance, some cron's use a 0-7 range for the day of week where both 0 and 7 represent Sunday. We do not.
+### Job Configuration
 
- * Seconds: 0-59
- * Minutes: 0-59
- * Hours: 0-23
- * Day of Month: 1-31
- * Months: 0-11 (Jan-Dec)
- * Day of Week: 0-6 (Sun-Sat)
+- `name` - [REQUIRED] - Set a name for the job.
+- `cronTime` - [REQUIRED] - The time to fire off your job. This can be in the form of cron syntax or a JS [Date](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date) object.
+- `onTick` - [REQUIRED] - The function to fire at the specified time.
+- `onComplete` - [OPTIONAL] - A function that will fire when the job is stopped.
+- `manualStart` - [OPTIONAL] - Specifies whether to start the job just before exiting the constructor. Default is false.
+- `timeZone` - [OPTIONAL] - Specify the timezone for the execution. Check all timezones available at [Moment Timezone Website](http://momentjs.com/timezone/).
+- `onJobInitialised` - [OPTIONAL] - A function that will be fired when the job is created.
 
-API
-==========
+### Mixin Methods
 
-Parameter Based
+- `startJob(jobName)` - Starts the specified job.
+- `stopJob(jobName)` - Stops the specified job.
+- `getJob(jobName)` - Returns the job object for the specified job name.
 
-* `Cron`
-    * `cronTime` - [REQUIRED] - The time to fire off your job. This can be in the form of cron syntax or a JS [Date](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date) object.
-    * `onTick` - [REQUIRED] - The function to fire at the specified time.
-    * `name` - [OPTIONAL] - Set a name to the job, will be automaticly generated if you don't set it
-    * `onComplete` - [OPTIONAL] - A function that will fire when the job is complete, when it is stopped.
-    * `manualStart` - [OPTIONAL] - Specifies whether to start the job just before exiting the constructor. By default this is set to false. If left at default you will need to call `job.start()` in order to start the job (assuming `job` is the variable you set the cronjob to). This does not immediately fire your `onTick` function, it just gives you more control over the behavior of your jobs.
-    * `timeZone` - [OPTIONAL] - Specify the timezone for the execution. This will modify the actual time relative to your timezone. If the timezone is invalid, an error is thrown. You can check all timezones available at [Moment Timezone Website](http://momentjs.com/timezone/).
-    * `runOnInit` - [OPTIONAL] - This will be fired on `start()` function as soon as the requisit initialization has happened.
-  
-* `CronJob`
-  * `start` - Runs your job.
-  * `stop` - Stops your job.
-  * `setTime` - Change the time for the `CronJob`. Param must be a `CronTime` from `getCronTime`.
-  * `lastDate` - Tells you the last execution date.
-  * `nextDates` - Provides an array of the next set of dates that will trigger an `onTick`.
-  * `addCallback` - Allows you to add `onTick` callbacks.
+### Job Object Methods
 
-* `getCronTime(time)`
-  * Return a CronTime instance
-    * `time` - [REQUIRED] - The time to fire off your job. This can be in the form of cron syntax or a JS [Date](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date) object.
+- `startJob()` - Starts the job.
+- `stopJob()` - Stops the job.
+- `lastDate()` - Returns the last execution date of the job.
+- `running()` - Returns whether the job is currently running.
+- `setTime(time)` - Changes the time for the job. `time` can be a cron string or a Date object.
+- `nextDates(count)` - Returns an array of the next `count` dates that the job will run.
+- `addCallback(callback)` - Adds an additional callback function to be executed when the job ticks.
+
+### Utility Methods
+
+- `getCronTime(time)` - Returns a CronTime instance for the given time.
+
+## Notes
+
+For any issues or feature requests, please create an issue on the GitHub repository. Make sure to search existing issues before creating a new one.
