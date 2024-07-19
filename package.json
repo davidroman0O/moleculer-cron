@@ -1,6 +1,6 @@
 {
   "name": "moleculer-cron",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Mixin for Node-Cron",
   "main": "index.js",
   "types": "index.d.ts",
@@ -19,7 +19,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git@github.com:davidroman0O/moleculer-cron.git"
+    "url": "git+ssh://git@github.com/davidroman0O/moleculer-cron.git"
   },
   "homepage": "https://github.com/davidroman0O/moleculer-cron#readme",
   "author": "David Roman",
