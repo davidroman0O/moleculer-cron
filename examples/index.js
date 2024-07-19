@@ -39,13 +39,22 @@ broker.createService({
                         this.logger.info("error ", e);
                     }
                 },
-                onJobInitialised: function() {
-                    this.logger.info("JobHelloWorld is created");
+                onInitialize: function() {
+                    this.logger.info("on event JobHelloWorld is onInitialize");
                     // This job is manual start, so it won't start automatically
                 },
                 onComplete: function() {
-                    this.logger.info("JobHelloWorld is stopped");
-                }
+                    this.logger.info("on event JobHelloWorld is onComplete");
+                },
+                onStart: function() {
+                    this.logger.info("on event JobHelloWorld is onStart");  
+                },
+                onStop: function() {
+                    this.logger.info("on event JobHelloWorld is onStop");
+                },
+                onComplete: function() {
+                    this.logger.info("on event JobHelloWorld is onComplete");
+                },
             },
             {
                 name: "jobToggle",
@@ -58,13 +67,22 @@ broker.createService({
                     this.startJob("jobHelloWorld");
                     this.logger.info("Stopped JobToggle and started JobHelloWorld");
                 },
-                onJobInitialised: function() {
-                    this.logger.info("JobToggle is created");
+                onInitialize: function() {
+                    this.logger.info("on event JobToggle is created");
                     // This job will start automatically
                 },
                 onComplete: function() {
-                    this.logger.info("JobToggle is stopped");
-                }
+                    this.logger.info("on event JobToggle is stopped");
+                },
+                onStart: function() {
+                    this.logger.info("on event JobToggle is onStart");  
+                },
+                onStop: function() {
+                    this.logger.info("on event JobToggle is onStop");
+                },
+                onComplete: function() {
+                    this.logger.info("on event JobToggle is onComplete");
+                },
             }
         ]
     },

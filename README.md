@@ -109,11 +109,13 @@ broker.createService({
 
 - `name` - [REQUIRED] - Set a name for the job.
 - `cronTime` - [REQUIRED] - The time to fire off your job. This can be in the form of cron syntax or a JS [Date](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date) object.
-- `onTick` - [REQUIRED] - The function to fire at the specified time.
-- `onComplete` - [OPTIONAL] - A function that will fire when the job is stopped.
 - `manualStart` - [OPTIONAL] - Specifies whether to start the job just before exiting the constructor. Default is false.
 - `timeZone` - [OPTIONAL] - Specify the timezone for the execution. Check all timezones available at [Moment Timezone Website](http://momentjs.com/timezone/).
-- `onJobInitialised` - [OPTIONAL] - A function that will be fired when the job is created.
+- `onInitialize` - [OPTIONAL] - Executed before the cron job is created.
+- `onStart` - [OPTIONAL] - When the cron is starting.
+- `onStop` - [OPTIONAL] - When the cron is stopping.
+- `onComplete` - [OPTIONAL] - A function that will fire when the job is stopped.
+- `onTick` - [REQUIRED] - The function to fire at the specified time.
 
 ### Mixin Methods
 

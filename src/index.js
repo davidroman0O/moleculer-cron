@@ -12,14 +12,17 @@ module.exports = {
     this.validateAndCreateJobs();
   },
 
-  started() {
-    this.startJobs();
-  },
 
   async stopped() {
     for (const job of this.jobs.values()) {
       job.stopJob();
     }
+  },
+
+  events: {
+    '$broker.started': async function() {
+      this.startJobs();
+    },
   },
 
   methods: {
@@ -44,6 +47,19 @@ module.exports = {
         throw new Error("Invalid job configuration. Required: name, cronTime, onTick");
       }
     
+      if (!jobConfig.onInitialize || typeof jobConfig.onInitialize !== 'function') {
+        jobConfig.onInitialize = function() {}
+      }
+      if (!jobConfig.onStart || typeof jobConfig.onStart !== 'function') {
+        jobConfig.onStart = function() {}
+      }
+      if (!jobConfig.onStop || typeof jobConfig.onStop !== 'function') {
+        jobConfig.onStop = function() {}
+      }
+      if (!jobConfig.onComplete || typeof jobConfig.onComplete !== 'function') {
+        jobConfig.onComplete = function() {}
+      }
+
       try {
         const job = new CronJob(
           jobConfig.cronTime,
@@ -53,18 +69,38 @@ module.exports = {
           jobConfig.timeZone,
           this
         );
+
+        binderOnInitialize = jobConfig.onInitialize.bind(this);
+        binderOnStart = jobConfig.onStart.bind(this);
+        binderOnStop = jobConfig.onStop.bind(this);
+        binderOnComplete = jobConfig.onComplete.bind(this);
+        binderOnTick = jobConfig.onTick.bind(this);
     
         const jobWrapper = {
           name: jobConfig.name,
           cronJob: job,
-          onJobInitialised: jobConfig.onJobInitialised || function() {},
+          onInitialize: function() {
+            if (jobConfig.onInitialize) binderOnInitialize();
+          },
+          onStart: function() {
+            if (jobConfig.onStart) binderOnStart();
+          },
+          onStop: function() {
+            if (jobConfig.onStop) binderOnStop();
+          },
+          onComplete: function() {
+            if (jobConfig.onComplete) binderOnComplete();
+          },
+          onTick: function() {
+            if (jobConfig.onTick) binderOnTick();
+          },
           startJob: function() {
-            if (jobConfig.OnStart) jobConfig.OnStart();
             this.cronJob.start();
+            jobWrapper.onStart();
           },
           stopJob: function() {
-            if (jobConfig.OnStop) jobConfig.OnStop();
             this.cronJob.stop();
+            jobWrapper.onStop();
           },
           lastDate: function() {
             return this.cronJob.lastDate();
@@ -87,10 +123,10 @@ module.exports = {
         this.jobs.set(jobConfig.name, jobWrapper);
         this.logger.info(`Cron job created: ${jobConfig.name}`);
     
-        if (typeof jobWrapper.onJobInitialised === 'function') {
-          jobWrapper.onJobInitialised.call(this);
-        }
+        jobWrapper.onInitialize();
+        
       } catch (error) {
+        console.error(error);
         throw new Error(`Failed to create job ${jobConfig.name}: ${error.message}`);
       }
     },
