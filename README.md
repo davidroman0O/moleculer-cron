@@ -46,8 +46,8 @@ broker.createService({
                         this.logger.info("error ", e);
                     }
                 },
-                onJobInitialised: function() {
-                    this.logger.info("JobHelloWorld is created");
+                onInitialize: function() {
+                    this.logger.info("JobHelloWorld is init");
                     // This job is manual start, so it won't start automatically
                 },
                 onComplete: function() {
@@ -65,8 +65,8 @@ broker.createService({
                     this.startJob("jobHelloWorld");
                     this.logger.info("Stopped JobToggle and started JobHelloWorld");
                 },
-                onJobInitialised: function() {
-                    this.logger.info("JobToggle is created");
+                onInitialize: function() {
+                    this.logger.info("JobToggle is init");
                     // This job will start automatically
                 },
                 onComplete: function() {
